@@ -5,7 +5,7 @@ from torchvision import transforms, datasets
 
 
 
-def get_dataloader(data_dir, input_dir, batch_size, train=Ture):
+def get_dataloader(data_dir, input_dir, batch_size, train=True):
     imgs = datasets.ImageFolder(os.path.join(data_dir, input_dir),
                                             transform=transforms.Compose([
                                                     transforms.Resize(256),

@@ -5,6 +5,10 @@ import torchvision
 from torch.autograd import Variable
 from models import Encoder, ClassClassifier 
 from dataset import get_dataloader 
+
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 # parameters
 batch_size = 15
 lr = 1e-4 
@@ -58,7 +62,7 @@ for epoch in range(1, epochs+1):
         src_feature = src_encoder(src_data)
         output = src_classifier(src_feature)
         loss = criterion(output, label)
-        pred = output.src_data.max(1, keepdim=True)[1]
+        pred = output.data.max(1, keepdim=True)[1]
         correct += pred.eq(label.data.view_as(pred)).cpu().sum()
         loss.backward()
         optimizer.step()
@@ -67,5 +71,6 @@ for epoch in range(1, epochs+1):
 
     # save parameters
     if (epoch % interval == 0):
-        torch.save(src_encoder.state_dict(), "./src_encoder{}.pth".format(epoch))
+        torch.save(src_encoder.state_dict(), "./checkpoints/src_encoder{}.pth".format(epoch))
+        torch.save(src_classifier.state_dict(), "./checkpoints/src_classifier{}.pth".format(epoch))
 
