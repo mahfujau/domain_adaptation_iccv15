@@ -34,8 +34,8 @@ encoder = Encoder()
 cl_classifier = ClassClassifier(num_classes=31)
 dm_classifier = DomainClassifier()
 
-encoder.load_state_dict(torch.load('./checkpoints/src_encoder40.pth'))
-cl_classifier.load_state_dict(torch.load('./checkpoints/src_classifier40.pth'))
+encoder.load_state_dict(torch.load('./checkpoints/a2w/src_encoder100.pth'))
+cl_classifier.load_state_dict(torch.load('./checkpoints/a2w/src_classifier100.pth'))
 
 src_train_loader = get_dataloader(data_dir, src_dir, batch_size, train=True)
 tgt_train_loader = get_dataloader(data_dir, tgt_dir, batch_size, train=True)
@@ -78,7 +78,9 @@ for epoch in range(1, epochs+1):
         #feature_concat = torch.cat((src_feature, tgt_feature), 0)
         
         soft_label_for_batch = ret_soft_label(tgt_label_cl, soft_labels)
-        
+        if cuda:
+            soft_label_for_batch = soft_label_for_batch.cuda()
+            soft_label_for_batch = Variable(soft_label_for_batch)
         output_cl_score = F.softmax(tgt_output_cl/temperature, dim=1)
         
        
@@ -86,7 +88,6 @@ for epoch in range(1, epochs+1):
         loss_soft = criterion_kl(tgt_output_cl, soft_label_for_batch)
 
         loss = loss_cl + nu * loss_soft
-        loss.backward()
         # acc
         tgt_output_cl = F.softmax(tgt_output_cl, dim=1) # softmax first
         pred = tgt_output_cl.data.max(1, keepdim=True)[1]

@@ -11,6 +11,7 @@ import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 # parameters
+weight_decay = 0.0005
 batch_size = 15
 lr = 1e-4 
 momentum = 0.9
@@ -41,7 +42,8 @@ src_encoder.load_state_dict(src_encoder_dict)
 optimizer = optim.SGD(
     list(src_encoder.parameters()) + list(src_classifier.parameters()),
     lr=lr,
-    momentum=momentum)
+    momentum=momentum,
+    weight_decay=weight_decay)
 
 criterion = nn.CrossEntropyLoss()
 

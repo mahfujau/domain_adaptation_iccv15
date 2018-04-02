@@ -18,14 +18,14 @@ src_dir = 'amazon'
 tgt_dir = 'webcam'
 test_dir = 'test'
 cuda = torch.cuda.is_available()
-test_loader = get_dataloader(data_dir, src_dir, batch_size=15, train=False)
+test_loader = get_dataloader(data_dir, tgt_dir, batch_size=15, train=False)
 
 # load the pretrained and fine-tuned alex model
 encoder = Encoder()
 classifier = ClassClassifier(num_classes=31)
 
-encoder.load_state_dict(torch.load('./checkpoints/w_src_encoder120.pth'))
-classifier.load_state_dict(torch.load('./checkpoints/w_src_classifier120.pth'))
+encoder.load_state_dict(torch.load('./checkpoints/a2w/src_encoder100.pth'))
+classifier.load_state_dict(torch.load('./checkpoints/a2w/src_classifier100.pth'))
 
 
 
