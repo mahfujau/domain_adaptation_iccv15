@@ -5,6 +5,7 @@ import torchvision
 from torch.autograd import Variable
 from models import Encoder, ClassClassifier 
 from dataset import get_dataloader 
+import torch.nn.functional as F
 
 import os
 
@@ -13,11 +14,11 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 batch_size = 15
 lr = 1e-4 
 momentum = 0.9
-interval = 100
-epochs = 5000
+interval = 10
+epochs = 1000
 data_dir = '/home/lucliu/dataset/domain_adaptation/office31'
 src_dir = 'amazon'
-
+#src_dir = 'webcam'
 cuda = torch.cuda.is_available() 
 # dataloader
 src_train_loader = get_dataloader(data_dir, src_dir, batch_size, train=True)
@@ -62,6 +63,7 @@ for epoch in range(1, epochs+1):
         src_feature = src_encoder(src_data)
         output = src_classifier(src_feature)
         loss = criterion(output, label)
+        output = F.softmax(output, dim=1)
         pred = output.data.max(1, keepdim=True)[1]
         correct += pred.eq(label.data.view_as(pred)).cpu().sum()
         loss.backward()
@@ -71,6 +73,9 @@ for epoch in range(1, epochs+1):
 
     # save parameters
     if (epoch % interval == 0):
-        torch.save(src_encoder.state_dict(), "./checkpoints/src_encoder{}.pth".format(epoch))
-        torch.save(src_classifier.state_dict(), "./checkpoints/src_classifier{}.pth".format(epoch))
+        torch.save(src_encoder.state_dict(), "./checkpoints/a2w/src_encoder{}.pth".format(epoch))
+        torch.save(src_classifier.state_dict(), "./checkpoints/a2w/src_classifier{}.pth".format(epoch))
+
+torch.save(src_encoder.state_dict(), "./checkpoints/a2w/src_encoder_final.pth")
+torch.save(src_classifier.state_dict(), "./checkpoints/a2w/src_classifier_final.pth")
 

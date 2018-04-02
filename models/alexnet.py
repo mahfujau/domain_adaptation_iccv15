@@ -42,7 +42,7 @@ class Encoder(nn.Module):
 
 
 class ClassClassifier(nn.Module):
-    def __init__(self, num_classes):
+    def __init__(self, num_classes=31):
         super(ClassClassifier, self).__init__()
         # fc8
         self.fc8 = nn.Sequential(
