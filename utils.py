@@ -24,7 +24,7 @@ def gen_soft_labels(num_classes, src_train_loader, src_encoder, src_classifier):
         output = src_classifier(src_feature)
 
         pred_scores = F.softmax(output/temperature, dim=1).data.cpu()
-        pred_scores_total.append(pred_scores)
+        pred_scores_total.append(pred_scorlses)
     
     pred_scores_total = torch.cat(pred_scores_total)
     label_total = torch.cat(label_total)
