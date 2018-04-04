@@ -1,13 +1,11 @@
 import torch 
 import torch.nn as nn 
-import torch.nn.functional as F 
-import torchvision
+import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 from models import Encoder, ClassClassifier, DomainClassifier
 from dataset import get_dataloader
 from utils import gen_soft_labels, ret_soft_label
-# import loss
 import os
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "5"
@@ -41,9 +39,9 @@ encoder.load_state_dict(torch.load('./checkpoints/a2w/src_encoder_final.pth'))
 cl_classifier.load_state_dict(torch.load('./checkpoints/a2w/src_classifier_final.pth'))
 
 src_train_loader = get_dataloader(data_dir, src_dir, batch_size, train=True)
-tgt_train_loader = get_dataloader(data_dir, tgt_dir, batch_size, train=True)
+tgt_train_loader = get_dataloader(data_dir, tgt_train_dir, batch_size, train=True)
 criterion = nn.CrossEntropyLoss()
-criterion_kl = nn.KLDivLoss()
+# criterion_kl = nn.KLDivLoss()
 if cuda:
     criterion = criterion.cuda()
     cl_classifier = cl_classifier.cuda()
@@ -95,7 +93,8 @@ for epoch in range(1, epochs+1):
         soft_label_for_batch = Variable(soft_label_for_batch)
         output_cl_score = F.softmax(tgt_output_cl/temperature, dim=1)
         loss_cl = criterion(tgt_output_cl, tgt_label_cl)
-        loss_soft = criterion_kl(tgt_output_cl, soft_label_for_batch)
+        loss_soft = - (torch.sum(soft_label_for_batch * torch.log(output_cl_score)))/float(output_cl_score.size(0))
+        # loss_soft = criterion_kl(tgt_output_cl, soft_label_for_batch)
         loss = loss_cl + nu * loss_soft
         # loss = loss_cl
         loss.backward(retain_graph=True)
@@ -108,18 +107,23 @@ for epoch in range(1, epochs+1):
         tgt_output_dm = dm_classifier(tgt_feature.detach())
         loss_dm_src = criterion(src_output_dm, src_label_dm)
         loss_dm_tgt = criterion(tgt_output_dm, tgt_label_dm)
-        loss_dm = loss_dm_src + loss_dm_tgt
+        loss_dm = lam * (loss_dm_src + loss_dm_tgt)
         loss_dm.backward()
         optimizer_dm.step()
 
         # update encoder only using domain loss
         optimizer_conf.zero_grad()
-        tgt_output_dm_conf = dm_classifier(tgt_feature)
-        uni_distrib = torch.FloatTensor(tgt_output_dm.size()).uniform_(0, 1)
+        feature_concat =  torch.cat((src_feature, tgt_feature), 0)
+        # src_output_dm_conf = dm_classifier(src_feature)
+        # tgt_output_dm_conf = dm_classifier(tgt_feature)
+        output_dm_conf = dm_classifier(feature_concat)
+        output_dm_conf = F.softmax(output_dm_conf, dim=1)
+        uni_distrib = torch.FloatTensor(output_dm_conf.size()).uniform_(0, 1)
         if cuda:
             uni_distrib = uni_distrib.cuda()
         uni_distrib = Variable(uni_distrib)
-        loss_conf = lam * criterion_kl(tgt_output_dm_conf, uni_distrib)
+        # loss_conf = lam * criterion_kl(tgt_output_dm_conf, uni_distrib)
+        loss_conf = - lam * (torch.sum(uni_distrib * torch.log(output_dm_conf)))/float(output_dm_conf.size(0)) 
         loss_conf.backward()
         optimizer_conf.step()
         # acc
