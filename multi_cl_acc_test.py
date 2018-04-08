@@ -9,8 +9,9 @@ from dataset import get_dataloader
 
 import os
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "6"
+os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 
+num_classes = 31
 # Parameters
 batch_size = 15
 data_dir = '/home/lucliu/dataset/domain_adaptation/office31'
@@ -25,8 +26,8 @@ test_loader = get_dataloader(data_dir, tgt_dir, batch_size=15, train=False)
 encoder = Encoder()
 classifier = ClassClassifier(num_classes=31)
 
-encoder.load_state_dict(torch.load('./checkpoints/a2w/encoder6200.pth'))
-classifier.load_state_dict(torch.load('./checkpoints/a2w/class_classifier6200.pth'))
+encoder.load_state_dict(torch.load('./checkpoints/a2w/src_encoder_final.pth'))
+classifier.load_state_dict(torch.load('./checkpoints/a2w/src_classifier_final.pth'))
 
 
 
@@ -41,7 +42,8 @@ encoder.eval()
 classifier.eval()
 # begin train
 for epoch in range(1, 51):
-    correct = 0
+    correct = torch.zeros(num_classes)
+    total = torch.zeros(num_classes)
     for batch_idx, (test_data, label) in enumerate(test_loader):
         if cuda:
             test_data, label = test_data.cuda(), label.cuda()
@@ -51,6 +53,16 @@ for epoch in range(1, 51):
         output = F.softmax(output, dim=1)
         loss = criterion(output, label)
         pred = output.data.max(1, keepdim=True)[1]
-        correct += pred.eq(label.data.view_as(pred)).cpu().sum()
-    acc = correct / len(test_loader.dataset)
+
+        one_hot_pred = torch.zeros(pred.size(0), num_classes).scatter_(1, pred.cpu(), 1)
+        one_hot_label = torch.zeros(label.data.size(0), num_classes).scatter_(1, label.data.view_as(pred).cpu(), 1)
+        
+        
+        # correct += pred.eq(label.data.view_as(pred)).cpu().sum()
+        # acc for each category
+        correct += sum(one_hot_pred * one_hot_label)
+        total += sum(one_hot_label)
+    #print(correct)
+    #print(total)
+    acc = sum(correct / total) / num_classes
     print("epoch: %d, loss: %f, acc: %f"%(epoch, loss.data[0], acc))

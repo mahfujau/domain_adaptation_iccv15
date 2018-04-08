@@ -14,7 +14,7 @@ def get_dataloader(data_dir, input_dir, batch_size, train=True):
                                             ]))
 
     if train:
-        data_loader = torch.utils.data.DataLoader(imgs, batch_size=batch_size, shuffle=True)
+        data_loader = torch.utils.data.DataLoader(imgs, batch_size=batch_size, num_workers=4, shuffle=True, pin_memory=True)
     else:
-        data_loader = torch.utils.data.DataLoader(imgs, batch_size=batch_size, shuffle=False)
+        data_loader = torch.utils.data.DataLoader(imgs, batch_size=batch_size, num_workers=4, shuffle=False, pin_memory=True)
     return data_loader

@@ -6,17 +6,20 @@ from torch.autograd import Variable
 from models import Encoder, ClassClassifier 
 from dataset import get_dataloader 
 import torch.nn.functional as F
+import os 
+import argparse
 
-import os
-
-os.environ["CUDA_VISIBLE_DEVICES"] = "5"
+parser = argparse.ArgumentParser(description='Test')
+parser.add_argument('gpu_id', type=str, nargs='?', default='5', help="device id to run")
+args = parser.parse_args()
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id 
 # parameters
 weight_decay = 0.0005
-batch_size = 15
-lr = 1e-4 
+batch_size = 32
+lr = 1e-3 
 momentum = 0.9
 interval = 100
-epochs = 10000
+epochs = 1000
 data_dir = '/home/lucliu/dataset/domain_adaptation/office31'
 src_dir = 'amazon'
 #src_dir = 'webcam'
@@ -75,9 +78,9 @@ for epoch in range(1, epochs+1):
 
     # save parameters
     if (epoch % interval == 0):
-        torch.save(src_encoder.state_dict(), "./checkpoints/a2w/src_encoder{}.pth".format(epoch))
-        torch.save(src_classifier.state_dict(), "./checkpoints/a2w/src_classifier{}.pth".format(epoch))
+        torch.save(src_encoder.state_dict(), "./checkpoints/a2d/src_encoder{}.pth".format(epoch))
+        torch.save(src_classifier.state_dict(), "./checkpoints/a2d/src_classifier{}.pth".format(epoch))
 
-torch.save(src_encoder.state_dict(), "./checkpoints/a2w/src_encoder_final.pth")
-torch.save(src_classifier.state_dict(), "./checkpoints/a2w/src_classifier_final.pth")
+torch.save(src_encoder.state_dict(), "./checkpoints/a2d/src_encoder_final.pth")
+torch.save(src_classifier.state_dict(), "./checkpoints/a2d/src_classifier_final.pth")
 

@@ -15,8 +15,8 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "6"
 batch_size = 15
 data_dir = '/home/lucliu/dataset/domain_adaptation/office31'
 src_dir = 'amazon'
-#tgt_dir = 'webcam'
-tgt_dir = 'dslr'
+tgt_dir = 'webcam'
+#tgt_dir = 'dslr'
 test_dir = 'test'
 cuda = torch.cuda.is_available()
 test_loader = get_dataloader(data_dir, tgt_dir, batch_size=15, train=False)
@@ -25,8 +25,8 @@ test_loader = get_dataloader(data_dir, tgt_dir, batch_size=15, train=False)
 encoder = Encoder()
 classifier = ClassClassifier(num_classes=31)
 
-encoder.load_state_dict(torch.load('./checkpoints/a2w/encoder6200.pth'))
-classifier.load_state_dict(torch.load('./checkpoints/a2w/class_classifier6200.pth'))
+encoder.load_state_dict(torch.load('./checkpoints/a2w/no_soft_encoder6000.pth'))
+classifier.load_state_dict(torch.load('./checkpoints/a2w/no_soft_class_classifier6000.pth'))
 
 
 

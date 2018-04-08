@@ -14,9 +14,9 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "5"
 epochs = 10000
 temperature = 2
 batch_size = 15
-lr = 1e-3
+lr = 1e-4
 momentum = 0.9 
-interval = 50
+interval = 100
 data_dir = '/home/lucliu/dataset/domain_adaptation/office31'
 src_dir = 'amazon'
 tgt_train_dir = 'dslr_tgt'
@@ -54,19 +54,19 @@ optimizer = optim.SGD(
     lr=lr,
     momentum=momentum)
 
-optimizer_conf = optim.SGD(
-    encoder.parameters(),
-    lr=lr,
-    momentum=momentum)
+# optimizer_conf = optim.SGD(
+#     encoder.parameters(),
+#     lr=lr,
+#     momentum=momentum)
 
-optimizer_dm = optim.SGD(
-    dm_classifier.parameters(),
-    lr=lr,
-    momentum=momentum)
+# optimizer_dm = optim.SGD(
+#     dm_classifier.parameters(),
+#     lr=lr,
+#     momentum=momentum)
 # begin training
 encoder.train()
-cl_classifier.train()
-dm_classifier.train()
+#cl_classifier.train()
+#dm_classifier.train()
 for epoch in range(1, epochs+1):
     correct = 0
     for batch_idx, ((src_data, src_label_cl), (tgt_data, tgt_label_cl)) in enumerate(zip(src_train_loader, tgt_train_loader)):
@@ -101,44 +101,43 @@ for epoch in range(1, epochs+1):
         optimizer.step()
         
         # update domain classifier only
-        optimizer_dm.zero_grad()
-        # domain output
-        src_output_dm = dm_classifier(src_feature.detach())
-        tgt_output_dm = dm_classifier(tgt_feature.detach())
-        loss_dm_src = criterion(src_output_dm, src_label_dm)
-        loss_dm_tgt = criterion(tgt_output_dm, tgt_label_dm)
-        loss_dm = lam * (loss_dm_src + loss_dm_tgt)
-        loss_dm.backward()
-        optimizer_dm.step()
+        # optimizer_dm.zero_grad()
+        # # domain output
+        # src_output_dm = dm_classifier(src_feature.detach())
+        # tgt_output_dm = dm_classifier(tgt_feature.detach())
+        # loss_dm_src = criterion(src_output_dm, src_label_dm)
+        # loss_dm_tgt = criterion(tgt_output_dm, tgt_label_dm)
+        # loss_dm = loss_dm_src + loss_dm_tgt
+        # loss_dm.backward()
+        # optimizer_dm.step()
 
-        # update encoder only using domain loss
-        optimizer_conf.zero_grad()
-        feature_concat =  torch.cat((src_feature, tgt_feature), 0)
-        # src_output_dm_conf = dm_classifier(src_feature)
-        # tgt_output_dm_conf = dm_classifier(tgt_feature)
-        output_dm_conf = dm_classifier(feature_concat)
-        output_dm_conf = F.softmax(output_dm_conf, dim=1)
-        uni_distrib = torch.FloatTensor(output_dm_conf.size()).uniform_(0, 1)
-        if cuda:
-            uni_distrib = uni_distrib.cuda()
-        uni_distrib = Variable(uni_distrib)
-        # loss_conf = lam * criterion_kl(tgt_output_dm_conf, uni_distrib)
-        loss_conf = - lam * (torch.sum(uni_distrib * torch.log(output_dm_conf)))/float(output_dm_conf.size(0)) 
-        loss_conf.backward()
-        optimizer_conf.step()
+        # # update encoder only using domain loss
+        # optimizer_conf.zero_grad()
+        # feature_concat =  torch.cat((src_feature, tgt_feature), 0)
+        # # src_output_dm_conf = dm_classifier(src_feature)
+        # # tgt_output_dm_conf = dm_classifier(tgt_feature)
+        # output_dm_conf = dm_classifier(feature_concat)
+        # uni_distrib = torch.FloatTensor(output_dm_conf.size()).uniform_(0, 1)
+        # if cuda:
+        #     uni_distrib = uni_distrib.cuda()
+        # uni_distrib = Variable(uni_distrib)
+        # # loss_conf = lam * criterion_kl(tgt_output_dm_conf, uni_distrib)
+        # loss_conf = - lam * (torch.sum(uni_distrib * torch.log(output_dm_conf)))/float(output_dm_conf.size(0)) 
+        # loss_conf.backward()
+        # optimizer_conf.step()
         # acc
         tgt_output_cl_score = F.softmax(tgt_output_cl, dim=1) # softmax first
         pred = tgt_output_cl_score.data.max(1, keepdim=True)[1]
         correct += pred.eq(tgt_label_cl.data.view_as(pred)).cpu().sum()
 
     acc = correct / len(tgt_train_loader.dataset)
-    print("epoch: %d, class loss: %f, domain loss: %f, confusion loss: %f, acc: %f"%(epoch, loss.data[0], loss_dm.data[0], loss_conf.data[0], acc))
+    print("epoch: %d, class loss: %f, acc: %f"%(epoch, loss.data[0], acc))
 
         # save parameters
     if (epoch % interval == 0):
-        torch.save(encoder.state_dict(), "./checkpoints/a2d/encoder{}.pth".format(epoch))
-        torch.save(cl_classifier.state_dict(), "./checkpoints/a2d/class_classifier{}.pth".format(epoch))
+        torch.save(encoder.state_dict(), "./checkpoints/a2w/soft_encoder{}.pth".format(epoch))
+        torch.save(cl_classifier.state_dict(), "./checkpoints/a2w/soft_class_classifier{}.pth".format(epoch))
 
-torch.save(encoder.state_dict(), "./checkpoints/a2d/encoder_final.pth")
-torch.save(cl_classifier.state_dict(), "./checkpoints/a2d/class_classifier_final.pth")
+torch.save(encoder.state_dict(), "./checkpoints/a2w/soft_encoder_final.pth")
+torch.save(cl_classifier.state_dict(), "./checkpoints/a2w/soft_class_classifier_final.pth")
 
